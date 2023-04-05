@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import EcSwiper from "./components/EcSwiper.vue";
+// import {EcSwiper} from "@ec50n9/ec-swiper";
+// import "@ec50n9/ec-swiper/style.css";
 
 const dataList = [
   { name: "a", age: 19, background: "red" },

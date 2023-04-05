@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ec50n9/ec-swiper": "^0.0.8",
+    "sass": "^1.60.0",
     "vue": "^3.2.47"
   },
   "devDependencies": {

@@ -1,0 +1,9 @@
+{
+  "name": "@ec50n9/ec-swiper",
+  "version": "0.0.6",
+  "description": "一个简单好用的swiper组件",
+  "main": "ec-swiper.es.js",
+  "repository": "https://github.com/ec50n9/ec-swiper",
+  "author": "ec50n9",
+  "license": "MIT"
+}

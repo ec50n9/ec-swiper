@@ -1,12 +1,9 @@
-import { Ref } from "vue";
+import { Ref, onMounted, onUnmounted } from "vue";
 
 type GestureEventType = "start" | "move" | "end" | "cancel";
 type GestureEventCallback = (x: number, y: number) => void;
 
-function useGesture(elRef: Ref<HTMLDivElement | null>) {
-  const el = elRef.value;
-  if (!el) return;
-
+function useGesture(eleRef: Ref<HTMLElement | null>) {
   /**
    * 回调函数集合
    */
@@ -31,28 +28,35 @@ function useGesture(elRef: Ref<HTMLDivElement | null>) {
     callbacks.get(type)?.forEach((callback) => callback(x, y));
   }
 
-  const bindTouchEvents = () => {
-    function handleTouchStart(e: TouchEvent) {
-      const { clientX, clientY } = e.touches[0];
-      callAllCallbackByType("start", clientX, clientY);
-    }
-    function handleTouchMove(e: TouchEvent) {
-      const { clientX, clientY } = e.touches[0];
-      callAllCallbackByType("move", clientX, clientY);
-    }
-    function handleTouchEnd(e: TouchEvent) {
-      const { clientX, clientY } = e.changedTouches[0];
-      callAllCallbackByType("end", clientX, clientY);
-    }
-    function handleTouchCancel(e: TouchEvent) {
-      const { clientX, clientY } = e.changedTouches[0];
-      callAllCallbackByType("cancel", clientX, clientY);
-    }
+  function handleTouchStart(e: TouchEvent) {
+    const { clientX, clientY } = e.touches[0];
+    callAllCallbackByType("start", clientX, clientY);
+  }
+  function handleTouchMove(e: TouchEvent) {
+    const { clientX, clientY } = e.touches[0];
+    callAllCallbackByType("move", clientX, clientY);
+  }
+  function handleTouchEnd(e: TouchEvent) {
+    const { clientX, clientY } = e.changedTouches[0];
+    callAllCallbackByType("end", clientX, clientY);
+  }
+  function handleTouchCancel(e: TouchEvent) {
+    const { clientX, clientY } = e.changedTouches[0];
+    callAllCallbackByType("cancel", clientX, clientY);
+  }
 
-    el.addEventListener("touchstart", handleTouchStart);
-    el.addEventListener("touchmove", handleTouchMove);
-    el.addEventListener("touchend", handleTouchEnd);
-    el.addEventListener("touchcancel", handleTouchCancel);
+  const bindTouchEvents = () => {
+    eleRef.value!.addEventListener("touchstart", handleTouchStart);
+    eleRef.value!.addEventListener("touchmove", handleTouchMove);
+    eleRef.value!.addEventListener("touchend", handleTouchEnd);
+    eleRef.value!.addEventListener("touchcancel", handleTouchCancel);
+  };
+
+  const unbindTouchEvents = () => {
+    eleRef.value!.removeEventListener("touchstart", handleTouchStart);
+    eleRef.value!.removeEventListener("touchmove", handleTouchMove);
+    eleRef.value!.removeEventListener("touchend", handleTouchEnd);
+    eleRef.value!.removeEventListener("touchcancel", handleTouchCancel);
   };
 
   const bindMouseEvents = () => {
@@ -65,21 +69,27 @@ function useGesture(elRef: Ref<HTMLDivElement | null>) {
       const { clientX, clientY } = e;
       callAllCallbackByType("end", clientX, clientY);
 
-      el.removeEventListener("mousemove", handlePointerMove);
-      el.removeEventListener("mouseup", handlePointerUp);
+      eleRef.value!.removeEventListener("mousemove", handlePointerMove);
+      eleRef.value!.removeEventListener("mouseup", handlePointerUp);
     };
 
-    el.addEventListener("mousedown", (e) => {
+    eleRef.value!.addEventListener("mousedown", (e) => {
       const { clientX, clientY } = e;
       callAllCallbackByType("start", clientX, clientY);
 
-      el.addEventListener("mousemove", handlePointerMove);
-      el.addEventListener("mouseup", handlePointerUp);
+      eleRef.value!.addEventListener("mousemove", handlePointerMove);
+      eleRef.value!.addEventListener("mouseup", handlePointerUp);
     });
   };
 
-  bindTouchEvents();
-  //   bindMouseEvents();
+  onMounted(() => {
+    bindTouchEvents();
+    // bindMouseEvents();
+  });
+
+  onUnmounted(() => {
+    unbindTouchEvents();
+  });
 
   return {
     onStart: callbackSetter("start"),
