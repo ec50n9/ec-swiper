@@ -1,4 +1,4 @@
-import { Ref, onMounted, onUnmounted } from "vue";
+import { Ref, onBeforeUnmount, onMounted, onUnmounted } from "vue";
 
 type GestureEventType = "start" | "move" | "end" | "cancel";
 type GestureEventCallback = (x: number, y: number) => void;
@@ -87,7 +87,7 @@ function useGesture(eleRef: Ref<HTMLElement | null>) {
     // bindMouseEvents();
   });
 
-  onUnmounted(() => {
+  onBeforeUnmount(() => {
     unbindTouchEvents();
   });
 

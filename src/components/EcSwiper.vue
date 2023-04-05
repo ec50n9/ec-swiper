@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 import useSwiper from "../hooks/useSwiper";
 import { computed } from "@vue/reactivity";
 
@@ -28,13 +28,26 @@ const {
   currentPosition,
   prevPosition,
   nextPosition,
+  onIndexChanged,
+  onPercentageChanged,
+  onAnimateEnd,
 } = useSwiper({
   containerRef: ecSwiper,
   dataLength: props.dataList.length,
   currentIndex: swiperCurrentIndex,
-  onIndexChanged: (index, oldIndex) => {
-    console.log(`${oldIndex} -> ${index}`);
-  },
+});
+
+onIndexChanged((newIndex, oldIndex) => {
+  console.log("index changed", newIndex, "->", oldIndex);
+});
+
+onAnimateEnd(() => {
+  console.log("animate end");
+});
+
+onPercentageChanged((percentage, direction) => {
+  // console.log("percentage changed", percentage, direction);
+  // console.log("scaleMask", scaleMask.value);
 });
 </script>
 

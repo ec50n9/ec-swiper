@@ -1,13 +1,13 @@
-import { Ref, computed, onMounted, reactive, ref } from "vue";
+import { Ref, computed, onMounted, reactive, ref, watch } from "vue";
 import useGesture from "./useGesture";
 
 interface SwiperOptions {
   containerRef: Ref<HTMLElement | null>;
   dataLength: number;
   currentIndex: Ref<number>;
-  onIndexChanged?: (index: number, oldIndex: number) => void;
   calculateFutureIndex?: (
     distance: number,
+    containerWidth: number,
     currentIndex: number,
     prevIndex: number,
     nextIndex: number
@@ -33,11 +33,12 @@ interface SwiperOptions {
  */
 const defaultCalculateFutureIndex = (
   distance: number,
+  containerWidth: number,
   currentIndex: number,
   prevIndex: number,
   nextIndex: number
 ) => {
-  const minDistance = 100;
+  const minDistance = containerWidth / 3;
   if (distance > minDistance) return prevIndex;
   if (distance < -minDistance) return nextIndex;
   return currentIndex;
@@ -76,13 +77,29 @@ const dragData = reactive({
 });
 const currentAnimationPosition = ref(0);
 
+// 动画中断的钩子
+type AnimationInterruptHook = (distance: number) => void;
+const animationInterruptHooks: AnimationInterruptHook[] = [];
+const onAnimateInterrupt = (hook: AnimationInterruptHook) =>
+  animationInterruptHooks.push(hook);
+
+type AnimationEndHook = (distance: number) => void;
+const animationEndHooks: AnimationEndHook[] = [];
+const onAnimateEnd = (hook: AnimationEndHook) => animationEndHooks.push(hook);
+
 const animationRestorePosition = () =>
   requestAnimationFrame(() => {
-    if (dragData.dragging) return;
+    if (dragData.dragging) {
+      animationInterruptHooks.forEach((hook) =>
+        hook(currentAnimationPosition.value)
+      );
+      return;
+    }
 
     const distance = currentAnimationPosition.value;
     if (Math.abs(distance) < 3) {
       currentAnimationPosition.value = 0;
+      animationEndHooks.forEach((hook) => hook(distance));
       return;
     }
 
@@ -137,6 +154,28 @@ function useSwiper(options: SwiperOptions) {
   // 初始化监听器
   const { onStart, onMove, onEnd } = useGesture(options.containerRef);
 
+  // 索引改变的钩子
+  type IndexChangedHook = (newIndex: number, oldIndex: number) => void;
+  const indexChengedHooks: IndexChangedHook[] = [];
+  const onIndexChanged = (hook: IndexChangedHook) =>
+    indexChengedHooks.push(hook);
+
+  // 百分比改变的钩子
+  type PercentageHook = (percentage: number, direction: number) => void;
+  const percentageHooks: PercentageHook[] = [];
+  const onPercentageChanged = (hook: PercentageHook) =>
+    percentageHooks.push(hook);
+
+  const percentage = computed(() => {
+    const tem = currentPosition.value / containerWidth.value;
+    return tem > 0 ? tem : tem + 1;
+  });
+  watch(percentage, (newValue) => {
+    const direction = dragData.moveX - dragData.startX > 0 ? 1 : -1;
+    const newPercentage = direction > 0 ? newValue : 1 - newValue;
+    percentageHooks.forEach((hook) => hook(newPercentage, direction));
+  });
+
   onStart((x) => {
     dragData.dragging = true;
     dragData.startX = x - currentAnimationPosition.value;
@@ -156,12 +195,14 @@ function useSwiper(options: SwiperOptions) {
     const oldIndex = currentIndex.value;
     const newIndex = calculateFutureIndex(
       distance,
+      containerWidth.value,
       currentIndex.value,
       prevIndex.value,
       nextIndex.value
     );
     currentIndex.value = newIndex;
-    options.onIndexChanged?.(newIndex, oldIndex);
+    // 触发索引改变的钩子
+    indexChengedHooks.forEach((hook) => hook(newIndex, oldIndex));
 
     let offset = 0;
     if (newIndex !== oldIndex)
@@ -181,6 +222,10 @@ function useSwiper(options: SwiperOptions) {
     onStart,
     onMove,
     onEnd,
+    onIndexChanged,
+    onPercentageChanged,
+    onAnimateInterrupt,
+    onAnimateEnd,
   };
 }
 
