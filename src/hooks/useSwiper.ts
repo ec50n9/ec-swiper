@@ -139,7 +139,7 @@ function useSwiper(options: SwiperOptions) {
 
   onStart((x) => {
     dragData.dragging = true;
-    dragData.startX = x;
+    dragData.startX = x - currentAnimationPosition.value;
     dragData.moveX = x;
   });
 
